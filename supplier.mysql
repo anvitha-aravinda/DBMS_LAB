@@ -1,0 +1,68 @@
+create database SUPPLIER;
+use SUPPLIER;
+create table SUPPLIERS(
+sid int,
+sname varchar(30),
+address varchar(255),
+primary key(sid));
+
+create table PARTS(
+pid int,
+pname varchar(100),
+color varchar(255),
+primary key(pid));
+
+create table CATALOG(
+sid int,
+pid int,
+cost float,
+foreign key(sid) references SUPPLIERS(sid),
+foreign key(pid) references PARTS(pid));
+
+alter table PARTS add cost real;
+alter table PARTS drop column cost;
+
+
+insert into SUPPLIERS values(10001,'Acme Widget','Bangalore'),(10002,'Johns','Kolkata'),(10003,'Vimal','Mumbai'),(10004,'Reliance','Delhi');
+
+insert into PARTS values(20001,'Book','Red'),(20002,'Pen','Red'),(20003,'Pencil','Green'),(20004,'Mobile','Green'),(20005,'Charger','Black');
+
+insert into CATALOG values(10001,20001,10),(10001,20002,10),(10001,20003,30),(10001,20004,10),(10001,20005,10),(10002,20001,10),(10002,20002,20),(10003,20003,30),(10004,20003,40);
+
+select distinct P.pname
+from PARTS P,CATALOG C
+where C.pid=P.pid;
+
+select S.sname
+from SUPPLIERS S,CATALOG C 
+where S.sid=C.sid
+group by C.sid
+having count(distinct C.pid)=(select count(*) from PARTS);
+
+select S.sname
+from SUPPLIERS S,CATALOG C 
+where S.sid=C.sid and C.pid in (select pid from PARTS where color='Red')
+group by C.sid 
+having count(distinct C.pid)=(select count(*) from PARTS where color='Red');
+
+select P.pname 
+from PARTS P,CATALOG C1,SUPPLIERS S
+where P.pid=C1.pid and C1.sid=S.sid and S.sname='Acme Widget' and not exists (select * from CATALOG C,SUPPLIERS S1 where P.pid=C.pid and C.sid=S1.sid and S1.sname <>'Acme Widget');
+
+
+
+select distinct C.sid 
+from CATALOG C
+where C.cost >(select avg (C1.cost)
+                   from CATALOG C1
+                   where C1.pid = C.pid 
+);
+
+SELECT P.pid, S.sname
+FROM PARTS P, SUPPLIERS S, CATALOG C
+WHERE C.pid = P.pid
+AND C.sid = S.sid
+AND C.cost = (SELECT max(C1.cost)
+		FROM CATALOG C1
+		WHERE C1.pid = P.pid);
+
